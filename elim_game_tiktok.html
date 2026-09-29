@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ELIM GAME</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#05070d;color:#fff;font-family:Arial,Helvetica,sans-serif}
+.app{width:min(760px,100%);margin:auto;padding:12px}
+h1{margin:0 0 10px;text-align:center;font-size:34px;letter-spacing:5px}
+.controls{background:#101521;border:1px solid #293244;border-radius:14px;padding:10px;margin-bottom:10px}
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+label{font-size:10px;font-weight:800;color:#aab4c5;display:block;margin-bottom:4px}
+input,select,button{width:100%;height:40px;border-radius:9px;border:1px solid #344054;background:#080c14;color:white;padding:7px 9px;font-weight:800}
+button{cursor:pointer;background:#293244}
+button.primary{background:#ef4773;border:0}
+button.green{background:#168451;border:0}
+.actions{display:flex;gap:7px;margin-top:8px}
+.actions button{flex:1}
+
+.info{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px}
+.infoBox{height:58px;background:#111827;border:2px solid #394458;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.infoBox .label{font-size:9px;letter-spacing:1px;color:#aeb8c8;font-weight:900}
+.infoBox .value{font-size:23px;font-weight:1000;line-height:25px}
+.infoBox.insta .value{font-size:19px}
+.infoBox.coin .value{color:#ffd84a}
+
+.modeViewer{display:none;height:48px;background:#111827;border:2px solid #394458;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:7px;position:relative}.modeViewer b{font-size:18px;letter-spacing:1px}.modeViewer small{position:absolute;bottom:3px;font-size:7px;color:#9da8b9;font-weight:900;letter-spacing:1px}.modeViewer.open{border-color:#27c98a}.modeViewer.open b{color:#36e39b}.modeViewer.locked{border-color:#596579}.modeViewer.locked b{color:#dce2ec}..timerRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:8px}
+.sideMode{min-width:105px;height:58px;border:2px solid #596579;border-radius:10px;background:#111827;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:1000;letter-spacing:1px}
+.sideMode.open{border-color:#27c98a;color:#36e39b}
+.sideMode.locked{border-color:#596579;color:#dce2ec}
+.timer{background:#101521;border:1px solid #293244;border-radius:12px;text-align:center;padding:7px;margin-bottom:8px}
+.time{font-size:48px;font-weight:1000;line-height:1}.timer.elimination .time{color:#ff304f;text-shadow:0 0 12px #ff304f88}
+.timer small{font-size:10px;letter-spacing:2px;color:#aeb8c8;font-weight:900}
+
+.shell{width:100%;aspect-ratio:16/10;background:#03050a;border:5px solid #ffe12f;border-radius:22px;padding:7px;box-shadow:0 0 0 2px #ff3048,0 0 22px #ffdf0040;overflow:hidden}
+.board{width:100%;height:100%;position:relative;background:#060b15;border:2px solid #ff3048;border-radius:13px;overflow:hidden}
+.grid{position:absolute;inset:7px;display:grid;gap:4px;overflow:hidden}
+.slot{min-width:0;min-height:0;background:#f3edf2;border:2px solid #121722;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.slot.selected{border-color:#ff314f;box-shadow:0 0 0 2px #ff314f,0 0 15px #ff314f;transform:scale(1.03)}.slot.flash{border-color:#8d5260;box-shadow:0 0 0 2px #8d5260;background:#77737a}
+.slot img{width:var(--avatar);height:var(--avatar);border-radius:50%;object-fit:cover}
+.initial{width:var(--avatar);height:var(--avatar);border-radius:50%;background:#ef4773;display:flex;align-items:center;justify-content:center;font-size:calc(var(--avatar)*.45);font-weight:1000}
+.name{position:absolute;bottom:1px;left:2px;right:2px;text-align:center;color:#111;font-size:var(--font);font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8d98aa;font-weight:900}
+.elim{position:absolute;inset:0;background:radial-gradient(circle,#142039,#040810 70%);z-index:20;display:flex;align-items:center;justify-content:center;text-align:center}
+.elim h2{margin:0;color:#ff4d58;font-size:clamp(35px,9vw,70px);letter-spacing:5px}
+.elim img,.elim .bigInitial{width:clamp(75px,16vw,135px);height:clamp(75px,16vw,135px);border-radius:50%;object-fit:cover;border:4px solid #ff9eab;margin:7px}
+.bigInitial{display:flex;align-items:center;justify-content:center;background:#ef4773;font-size:55px;font-weight:1000}
+.elim .nameBig{font-size:clamp(21px,5vw,40px);font-weight:1000}
+.elim .more{font-size:clamp(12px,3vw,22px);font-weight:1000;color:#ffb0bb}
+.elim .continue{font-size:12px;letter-spacing:2px;color:#ff9fac;font-weight:900;margin-top:8px}
+.winner{position:absolute;inset:0;background:radial-gradient(circle,#47203f,#050912 70%);z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.winner b{font-size:clamp(42px,11vw,75px);color:#ff9db2}
+.winner span{font-size:clamp(24px,6vw,45px);font-weight:1000}
+
+.gift{margin-top:9px;background:#101521;border:1px solid #293244;border-radius:12px;padding:9px}
+.giftrow{display:grid;grid-template-columns:1fr 1fr auto;gap:7px}
+.note{font-size:9px;color:#8e99aa;line-height:1.4;margin-top:6px}
+.badge{font-size:9px;text-align:center;color:#ff9db2;font-weight:900;margin-top:5px}
+@media(max-width:550px){.timerRow{grid-template-columns:minmax(0,1fr) auto}.sideMode{min-width:82px;height:52px;font-size:15px;padding:0 8px}
+ .row{grid-template-columns:1fr 1fr}
+ .infoBox{height:53px}
+ .infoBox .value{font-size:19px}
+ .shell{border-width:3px}
+ .giftrow{grid-template-columns:1fr 1fr}
+ .giftrow button{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>ELIM GAME</h1>
+
+<div class="controls">
+<div class="row">
+<div><label>Estado</label><select id="mode"><option value="locked">🔒 LOCKED</option><option value="open">🔓 OPEN</option></select></div>
+<div><label>Monedas por entrada</label><input id="threshold" type="number" min="1" value="100"></div>
+<div><label>Tiempo de entrada</label><input id="roundSeconds" type="number" min="1" value="30"></div>
+<div><label>Eliminaciones</label><input id="elimCount" type="number" min="1" value="1"></div>
+</div>
+<div class="actions">
+<button class="primary" id="start">▶ INICIAR</button>
+<button id="pause">⏸ PAUSAR</button>
+<button id="new">↻ NUEVA PARTIDA</button>
+</div>
+</div>
+
+<!-- LOS 4 RECTÁNGULOS SOLICITADOS -->
+<div class="info">
+<div class="infoBox insta"><div class="label">INSTA</div><div class="value"><input id="insta" type="number" value="1" min="0" style="height:27px;text-align:center;padding:2px"></div></div>
+<div class="infoBox"><div class="label">ENTRADAS</div><div id="entriesCount" class="value">0</div></div>
+<div class="infoBox"><div class="label">PARTICIPANTES</div><div id="playersCount" class="value">0</div></div>
+<div class="infoBox coin"><div class="label">ENTRADA</div><div id="coinCount" class="value">C 100</div></div>
+</div>
+
+<div class="timerRow">
+  <div id="timerBox" class="timer">
+    <div id="time" class="time">00:30</div>
+    <small id="timeLabel">TIEMPO PARA ENTRAR</small>
+    <div id="status" class="badge">LISTO</div>
+  </div>
+  <div id="sideMode" class="sideMode locked">LOCKED</div>
+</div>
+
+<div class="shell">
+<div id="board" class="board">
+<div id="grid" class="grid"></div>
+<div id="overlay"></div>
+</div>
+</div>
+
+<div class="gift">
+<div class="giftrow">
+<input id="user" placeholder="Usuario" value="Jugador1">
+<input id="coins" type="number" min="1" value="100">
+<button class="primary" id="send">🎁 REGALO</button>
+</div>
+<div class="note">Cada vez que un usuario acumula las monedas necesarias obtiene otra entrada. Puede tener varias entradas al mismo tiempo.</div>
+</div>
+
+<div class="gift">
+<div class="giftrow">
+<input id="tiktokUser" placeholder="@usuario de TikTok LIVE">
+<input id="connector" value="" readonly onfocus="this.select()">
+<button class="green" id="connect">🔗 ENLAZAR LIVE</button>
+</div>
+<div id="live" class="badge">● TIKTOK NO CONECTADO</div>
+<div class="note">El tablero debe abrirse desde este servidor, no como archivo content://. Escribe tu @usuario y pulsa ENLAZAR LIVE.</div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S={
+ mode:'locked',threshold:100,roundSeconds:30,remaining:30,elimCount:1,insta:1,
+ entries:[],balances:new Map(),avatars:new Map(),nextId:1,
+ running:false,eliminating:false,winner:null,roundTimer:null,elimTimer:null,
+ selectionTimer:null,selectionStarted:0,selectionDuration:7000,dead:[]
+};
+
+function n(v,min,max,def){let x=Number(v);return Number.isFinite(x)?Math.max(min,Math.min(max,Math.floor(x))):def}
+function fmt(v){return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}
+function key(x){return String(x||'').trim().toLowerCase()}
+function uniqueNames(){return [...new Set(S.entries.map(e=>key(e.name)))]}
+function accepting(){return !S.winner && (S.mode==='open' || S.remaining>0)}
+
+function metrics(total){
+ if(total<=5)return[5,1]; if(total<=10)return[5,2]; if(total<=15)return[5,3];
+ if(total<=20)return[5,4]; if(total<=30)return[6,5]; if(total<=42)return[7,6];
+ if(total<=56)return[8,7]; if(total<=72)return[9,8]; return[10,10]
+}
+
+function render(){
+ $('time').textContent=fmt(S.remaining);
+ const mv=$('modeViewer');
+ if(mv){
+   const isOpen=S.mode==='open';
+   mv.className='modeViewer '+(isOpen?'open':'locked');
+   $('modeIcon').textContent=isOpen?'🔓':'🔒';
+   $('modeText').textContent=isOpen?'OPEN':'LOCKED';
+ }
+ const sm=$('sideMode');
+ if(sm){
+   const isOpen=S.mode==='open';
+   sm.className='sideMode '+(isOpen?'open':'locked');
+   sm.textContent=isOpen?'OPEN':'LOCKED';
+ }
+
+ $('timerBox').classList.toggle('elimination',S.eliminating);
+ $('timeLabel').textContent=S.eliminating?'ELIMINACIÓN — '+(S.selectionActive?'SELECCIONANDO':'PRÓXIMA ELIMINACIÓN'):'TIEMPO PARA ENTRAR';
+ $('status').textContent=S.winner?'🏆 WINNER':S.eliminating?'🎲 CUENTA REGRESIVA':S.mode==='open'?'🔓 ENTRADAS ABIERTAS':S.running?'🔒 HASTA 0':'LISTO';
+ $('entriesCount').textContent=S.entries.length;
+ $('playersCount').textContent=uniqueNames().length;
+ $('coinCount').textContent='C '+S.threshold;
+ $('insta').value=S.insta;
+ $('grid').innerHTML='';
+ const list=[...S.entries].sort((a,b)=>(a.order||0)-(b.order||0));
+ if(!list.length){
+   const e=document.createElement('div');e.className='empty';e.textContent='ESPERANDO PARTICIPANTES…';$('grid').appendChild(e);
+ }else{
+   const [cols,rows]=metrics(list.length);
+   $('grid').style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;
+   $('grid').style.gridTemplateRows=`repeat(${rows},minmax(0,1fr))`;
+   const av=Math.max(18,Math.min(46,58-Math.sqrt(list.length)*5));
+   const fs=Math.max(6,12-Math.sqrt(list.length)*.65);
+   list.forEach((e,i)=>slot(e,i,av,fs));
+ }
+ if(S.winner) showWinner();
+ else if(!S.dead.length) $('overlay').innerHTML='';
+ renderBalances();
+}
+
+function slot(e,i,av,fs){
+ const d=document.createElement('div');d.className='slot';d.dataset.id=e.id;
+ const vi=S.selectionVisualIds.indexOf(e.id);
+ if(S.selectionActive && vi>=0)d.classList.add(vi===0?'selected':'flash');
+ d.style.setProperty('--avatar',av+'px');d.style.setProperty('--font',fs+'px');
+ const p=S.avatars.get(e.id);
+ if(p){const im=document.createElement('img');im.src=p;im.onerror=()=>im.remove();d.appendChild(im)}
+ else{const x=document.createElement('div');x.className='initial';x.style.width=av+'px';x.style.height=av+'px';x.textContent=e.name.charAt(0).toUpperCase();d.appendChild(x)}
+ const name=document.createElement('div');name.className='name';name.textContent=e.name;d.appendChild(name);
+ $('grid').appendChild(d);
+}
+
+function renderBalances(){
+ // El contador visual ya muestra las entradas y participantes; los saldos quedan internos.
+}
+
+function addGift(name,coins,avatar){
+ name=String(name||'').trim(); coins=n(coins,1,999999,1);
+ if(!name || S.winner || !accepting()) return;
+
+ // INSTA = meta de monedas para ganar inmediatamente.
+ // Si un regalo alcanza o supera ese número, el usuario gana.
+ const instaTarget=n(S.insta,0,999999,1);
+ if(instaTarget>0 && coins>=instaTarget){
+   clearInterval(S.roundTimer);
+   clearTimeout(S.elimTimer);
+   clearInterval(S.selectionTimer);
+   S.running=false;
+   S.eliminating=false;
+   S.selectionActive=false;
+   S.winner=name;
+   $('overlay').innerHTML='';
+   render();
+   return;
+ }
+
+ const k=key(name);
+ let b=S.balances.get(k);
+ if(!b){b={name,coins:0};S.balances.set(k,b)}
+ b.coins+=coins;
+ while(b.coins>=S.threshold && accepting()){
+   b.coins-=S.threshold;
+   const e={id:S.nextId++,name:b.name,order:Math.random()};
+   S.entries.splice(Math.floor(Math.random()*(S.entries.length+1)),0,e);
+   if(avatar)S.avatars.set(e.id,avatar);
+ }
+ S.entries.forEach(e=>e.order=Math.random());
+ if(S.eliminating && !S.selectionActive)restartEliminationTimer();
+ render();
+}
+function start(){
+ if(S.winner)return;
+ S.threshold=n($('threshold').value,1,999999,S.threshold);
+ S.roundSeconds=n($('roundSeconds').value,1,3600,S.roundSeconds);
+ S.elimCount=n($('elimCount').value,1,100,S.elimCount);
+ if(S.remaining<=0)S.remaining=S.roundSeconds;
+ clearInterval(S.roundTimer);S.eliminating=false;S.running=true;
+ S.roundTimer=setInterval(()=>{
+   if(S.remaining>0)S.remaining--;
+   if(S.remaining<=0){S.remaining=0;S.running=false;beginElimination()}
+   render();
+ },1000);
+ render();
+}
+
+function pause(){S.running=false;clearInterval(S.roundTimer);render()}
+
+function beginElimination(){
+ if(S.winner)return;
+ clearInterval(S.roundTimer);S.roundTimer=null;
+ if(!S.entries.length){render();return}
+ if(uniqueNames().length===1){S.winner=S.entries[0].name;render();return}
+ S.eliminating=true;
+ restartEliminationTimer();
+}
+
+function restartEliminationTimer(){
+ if(!S.eliminating||S.winner||S.selectionActive)return;
+ clearTimeout(S.elimTimer);
+ const sec=S.entries.length===2?10:5;
+ S.remaining=sec;
+ S.elimDeadline=Date.now()+sec*1000;
+ $('timeLabel').textContent='PRÓXIMA ELIMINACIÓN';
+ clearInterval(S.roundTimer);
+ S.roundTimer=setInterval(()=>{
+   if(!S.eliminating||S.selectionActive){
+     clearInterval(S.roundTimer);
+     return;
+   }
+   const left=Math.max(0,S.elimDeadline-Date.now());
+   S.remaining=Math.ceil(left/1000);
+   render();
+   if(left<=0){
+     clearInterval(S.roundTimer);
+     S.remaining=0;
+     selectRandom();
+   }
+ },100);
+ render();
+}
+function selectRandom(){
+ if(!S.eliminating||S.winner||!S.entries.length)return;
+ const amount=Math.min(S.elimCount,Math.max(1,S.entries.length-1));
+ const pool=[...S.entries],chosen=[];
+ while(chosen.length<amount && pool.length){
+   chosen.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+ }
+ runSevenSecondSelection(chosen);
+}
+
+function runSevenSecondSelection(chosen){
+ const start=performance.now();
+ clearInterval(S.selectionTimer);
+ clearInterval(S.roundTimer);
+ const duration=4000;
+ S.selectionStarted=start;
+ S.selectionActive=true;
+ S.selectionDeadline=start+duration;
+ S.selectionVisualIds=[];
+ S.remaining=4;
+ render();
+
+ S.selectionTimer=setInterval(()=>{
+   const elapsed=performance.now()-start;
+   const left=Math.max(0,duration-elapsed);
+   S.remaining=Math.ceil(left/1000);
+
+   const ids=S.entries.map(e=>e.id);
+   const picked=[];
+   if(ids.length){
+     const amount=Math.min(ids.length,Math.max(3,Math.ceil(ids.length*.10)));
+     while(picked.length<amount){
+       const id=ids[Math.floor(Math.random()*ids.length)];
+       if(!picked.includes(id))picked.push(id);
+     }
+   }
+   S.selectionVisualIds=picked;
+   render();
+
+   if(left<=0){
+     clearInterval(S.selectionTimer);
+     S.selectionActive=false;
+     S.selectionVisualIds=[];
+     S.remaining=0;
+     render();
+     showEliminated(chosen);
+   }
+ },80);
+}
+function showEliminated(chosen){
+ S.entries=S.entries.filter(e=>!chosen.some(c=>c.id===e.id));
+ const main=chosen[0], others=chosen.slice(1);
+ const photo=S.avatars.get(main.id);
+ let visual=photo?`<img src="${escapeHtml(photo)}">`:`<div class="bigInitial">${escapeHtml(main.name.charAt(0).toUpperCase())}</div>`;
+ $('overlay').innerHTML=`<div class="elim">
+   <div>
+     <h2>ELIMINATED</h2>
+     ${others.length?`<div class="more">+${others.length} MORE ELIMINATED</div>`:''}
+     ${visual}
+     <div class="nameBig">${escapeHtml(main.name)}</div>
+     <div class="continue">ROUND CONTINUES…</div>
+   </div>
+ </div>`;
+ S.dead=chosen;
+ S.selectionActive=false;
+ S.selectionVisualIds=[];
+ S.elimDeadline=0;
+ render();
+ setTimeout(()=>{
+   S.dead=[];
+   $('overlay').innerHTML='';
+   if(uniqueNames().length===1){S.winner=S.entries[0]?.name||main.name;S.eliminating=false;render();return}
+   if(!S.entries.length){S.eliminating=false;render();return}
+   restartEliminationTimer();
+ },3000);
+}
+
+function showWinner(){
+ $('overlay').innerHTML=`<div class="winner"><b>WINNER</b><span>${escapeHtml(S.winner)}</span></div>`;
+}
+
+function escapeHtml(x){
+ return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function newGame(){
+ clearInterval(S.roundTimer);clearTimeout(S.elimTimer);clearInterval(S.selectionTimer);
+ S.entries=[];S.balances.clear();S.avatars.clear();S.nextId=1;S.remaining=S.roundSeconds;
+ S.running=false;S.eliminating=false;S.selectionActive=false;S.selectionVisualIds=[];S.elimDeadline=0;S.selectionDeadline=0;S.winner=null;S.dead=[];render();
+}
+
+$('mode').onchange=e=>{S.mode=e.target.value;render()};
+$('threshold').onchange=()=>{S.threshold=n($('threshold').value,1,999999,S.threshold);render()};
+$('roundSeconds').onchange=()=>{S.roundSeconds=n($('roundSeconds').value,1,3600,S.roundSeconds);if(!S.running&&!S.eliminating)S.remaining=S.roundSeconds;render()};
+$('elimCount').onchange=()=>{S.elimCount=n($('elimCount').value,1,100,S.elimCount);render()};
+$('insta').onchange=()=>{S.insta=n($('insta').value,0,999999,1);render()};
+$('start').onclick=start;$('pause').onclick=pause;$('new').onclick=newGame;
+$('send').onclick=()=>addGift($('user').value,$('coins').value);
+let liveSocket=null;
+
+document.addEventListener('DOMContentLoaded',()=>{$('connector').value=(location.protocol==='https:'?'wss://':'ws://')+location.host;});
+
+function setLiveStatus(text, ok=false){
+  $('live').textContent=text;
+  $('live').style.color=ok?'#36e39b':'#ff9db2';
+}
+
+function connectBoardSocket(){
+  const protocol=location.protocol==='https:'?'wss':'ws';
+  const url=`${protocol}://${location.host}`;
+  try{
+    liveSocket=new WebSocket(url);
+    liveSocket.onopen=()=>setLiveStatus('● SERVIDOR CONECTADO',true);
+    liveSocket.onclose=()=>setLiveStatus('● SERVIDOR DESCONECTADO');
+    liveSocket.onerror=()=>setLiveStatus('● ERROR DEL SERVIDOR');
+    liveSocket.onmessage=(ev)=>{
+      try{
+        const msg=JSON.parse(ev.data);
+        if(msg.type==='status'){
+          setLiveStatus(msg.text,msg.connected===true);
+        }else if(msg.type==='gift'){
+          // El servidor ya calculó el valor total del regalo.
+          addGift(msg.username,msg.coins,msg.avatarUrl||'');
+        }
+      }catch(err){console.error('Mensaje inválido',err)}
+    };
+  }catch(err){setLiveStatus('● NO SE PUDO ABRIR SOCKET')}
+}
+
+$('connect').onclick=async()=>{
+  const username=$('tiktokUser').value.trim().replace(/^@/,'');
+  if(!username){setLiveStatus('● ESCRIBE TU USUARIO');return}
+  try{
+    setLiveStatus('● CONECTANDO…');
+    const res=await fetch('/api/connect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username})
+    });
+    const data=await res.json();
+    setLiveStatus(data.message||'● SOLICITUD ENVIADA',data.ok===true);
+  }catch(err){
+    setLiveStatus('● SERVIDOR NO DISPONIBLE');
+  }
+};
+
+// Punto de entrada compatible con pruebas locales.
+window.receiveTikTokGift=(username,coins,avatarUrl)=>addGift(username,coins,avatarUrl);
+
+connectBoardSocket();
+
+render();
+</script>
+</body>
+</html>
